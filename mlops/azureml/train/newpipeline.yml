@@ -68,7 +68,7 @@ jobs:
 
 
   register_model:
-    name: register_mode  # Provide the job name
+    name: register_model  # Provide the job name
     display_name: Register_Model  # Provide the display name for the job
     code: ../../../data-science/src
     command: >-
