@@ -3,81 +3,43 @@
 """
 Registers the best-trained ML model from the sweep job.
 """
-
+import os
 import argparse
+import logging
+import mlflow.sklearn
+import pandas as pd
+import sys
 from pathlib import Path
-import mlflow
-import os 
-import json
 
-def parse_args():
-    '''Parse input arguments'''
+mlflow.start_run()  # Starting the MLflow experiment run
 
+def main():
+    # Argument parser setup for command line arguments
+ 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', type=str, help='Path to teh trained model ')  # Hint: Specify the type for model_name (str)
-    parser.add_argument('--model_path', type=str, help='Model directory')  # Hint: Specify the type for model_path (str)
-    parser.add_argument("--model_info_output_path", type=str, help="Path to write model info JSON")  # Hint: Specify the type for model_info_output_path (str)
-    args, _ = parser.parse_known_args()
-    print(f'Arguments: {args}')
+    parser.add_argument("--model", type=str, required=True, help="Path to the trained model")  # Path to the trained model artifact
+    args = parser.parse_args()
+    print("input model path:", args.model)
+    print ("files in input path:", os.listdir(args.model))
 
-    return args
+    # Load the trained model from the provided path
+    model_path= args.model
+    if "model" in os.listdir(args.model):
+        model_path = os.path.join(args.model, "model")
+    model = mlflow.sklearn.load_model(args.model_path)  # code to load model from args.model)
 
-def main(args):
-    '''Loads the best-trained model from the sweep job and registers it'''
+    print("Registering the best trained used cars price prediction model")
 
-    print("Registering ", args.model_name)
+    # Register the model in the MLflow Model Registry under the name "price_prediction_model"
+    mlflow.sklearn.log_model(
+        sk_model=model,
+        registered_model_name="price_prediction_model",  # name under which the model will be registered
+        artifact_path="random_forest_price_regressor"  # path where the model artifacts will be stored
+    )
 
- # Step 1: Load the model from the specified path
-   
-    model = mlflow.sklearn.load_model(args.model_path)
-    mlflow.sklearn.log_model(sk_model=model, artifact_path="model")
-
- # Step 2: Log the loaded model in MLflow
-    run_id = mlflow.active_run().info.run_id
-    model_uri = f"runs:/{run_id}/model"
-    mv = mlflow.register_model(model_uri=model_uri, name=args.model_name)
-
-# Step 3: Register the logged model and retrieve its version
-    run_id = mlflow.active_run().info.run_id
-    model_uri = f"runs:/{run_id}/model"
-    mv = mlflow.register_model(model_uri=model_uri, name=args.model_name)
-
- # Step 4: Write model registration details into a JSON file 
-    model_info = {
-        "model_name": args.model_name,
-        "model_version": mv.version
-    }   
-# Ensure the output directory exists
-    os.makedirs(os.path.dirname(args.model_info_output_path), exist_ok=True)
+    # End the MLflow run
+    mlflow.end_run()  # code to end the MLflow run
     
-    with open(args.model_info_output_path, "w") as f:
-        json.dump(model_info, f)
-    
-    print(f"Model {args.model_name} version {mv.version} registered successfully.")
-    # -----------  WRITE YOR CODE HERE -----------
-    
-    # Step 1: Load the model from the specified path using `mlflow.sklearn.load_model` for further processing.  
-    # Step 2: Log the loaded model in MLflow with the specified model name for versioning and tracking.  
-    # Step 3: Register the logged model using its URI and model name, and retrieve its registered version.  
-    # Step 4: Write model registration details, including model name and version, into a JSON file in the specified output path.  
-
 
 if __name__ == "__main__":
-    
-    mlflow.start_run()
-    
-    # Parse Arguments
-    args = parse_args()
-    
-    lines = [
-        f"Model name: {args.model_name}",
-        f"Model path: {args.model_path}",
-        f"Model info output path: {args.model_info_output_path}"
-    ]
-
-    for line in lines:
-        print(line)
-
-    main(args)
-
-    mlflow.end_run()
+    main()
