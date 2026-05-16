@@ -4,17 +4,30 @@
 Trains ML model using training dataset and evaluates using test dataset. Saves trained model.
 """
 
+# Required imports for training
+import mlflow
 import argparse
-from pathlib import Path
+import os
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-import mlflow
-import mlflow.sklearn
 
-def parse_args():
-    '''Parse input arguments'''
+mlflow.start_run()  # Start the MLflow experiment run
 
+os.makedirs("./outputs", exist_ok=True)  # Create the "outputs" directory if it doesn't exist
+
+def select_first_file(path):
+    """Selects the first file in a folder, assuming there's only one file.
+    Args:
+        path (str): Path to the directory or file to choose.
+    Returns:
+        str: Full path of the selected file.
+    """
+    files = os.listdir(path)
+    return os.path.join(path, files[0])
+
+def main():
     parser = argparse.ArgumentParser("train")
     parser.add_argument("--train_data", type=str, help="Path to train dataset")
     parser.add_argument("--test_data", type=str, help="Path to test dataset")
@@ -25,20 +38,8 @@ def parse_args():
                         help='The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure or until all leaves contain less than min_samples_split samples.')
 
     args = parser.parse_args()
-    
-    # -------- WRITE YOUR CODE HERE --------
-    
-    # Step 1: Define arguments for train data, test data, model output, and RandomForest hyperparameters. Specify their types and defaults.  
 
-
-  
-
-    return args
-
-def main(args):
-    '''Read train and test datasets, train model, evaluate model, save trained model'''
-
-     # Load datasets
+    # Load datasets
     train_df = pd.read_csv(select_first_file(args.train_data))
     test_df = pd.read_csv(select_first_file(args.test_data))
 
@@ -68,36 +69,8 @@ def main(args):
     # Save the model
     mlflow.sklearn.log_model(sk_model=model, artifact_path=args.model_output)  # Save the model
 
-
-    # -------- WRITE YOUR CODE HERE --------
-
-    # Step 2: Read the train and test datasets from the provided paths using pandas. Replace '_______' with appropriate file paths and methods.  
-    # Step 3: Split the data into features (X) and target (y) for both train and test datasets. Specify the target column name.  
-    # Step 4: Initialize the RandomForest Regressor with specified hyperparameters, and train the model using the training data.  
-    # Step 5: Log model hyperparameters like 'n_estimators' and 'max_depth' for tracking purposes in MLflow.  
-    # Step 6: Predict target values on the test dataset using the trained model, and calculate the mean squared error.  
-    # Step 7: Log the MSE metric in MLflow for model evaluation, and save the trained model to the specified output path.  
-
+    mlflow.end_run()  # Ending the MLflow experiment run
 
 if __name__ == "__main__":
-    
-    mlflow.start_run()
-
-    # Parse Arguments
-    args = parse_args()
-
-    lines = [
-        f"Train dataset input path: {args.train_data}",
-        f"Test dataset input path: {args.test_data}",
-        f"Model output path: {args.model_output}",
-        f"Number of Estimators: {args.n_estimators}",
-        f"Max Depth: {args.max_depth}"
-    ]
-
-    for line in lines:
-        print(line)
-
-    main(args)
-
-    mlflow.end_run()
+    main()
 
